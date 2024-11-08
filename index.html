@@ -128,7 +128,83 @@
             border-color: #999;
         }
 
+        .readme-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
+        .collapsible-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .collapsible-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .readme-content {
+            padding: 20px;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .readme-content.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+        }
+
+        .readme-content h1 {
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .readme-content h2 {
+            color: #444;
+            margin-top: 25px;
+        }
+
+        .readme-content ul, .readme-content ol {
+            padding-left: 25px;
+        }
+
+        .readme-content li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .readme-content p {
+            line-height: 1.6;
+            color: #555;
+        }
+
+
+        .repo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            color: #333;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .repo-link:hover {
+            background-color: #e1e1e1;
+            text-decoration: none;
+        }
 
         .btn-primary {
             background-color: #007bff;
@@ -209,6 +285,16 @@
             <input type="color" id="colorScheme" onchange="updateColorScheme()" value="#c41e3a" class="color-picker">
             <p>5. Tap or click on cells in the program map to toggle them on/off, you may reset to origina by clicking this button:</p>
             <button class="reset-button" onclick="resetMatrix()">Reset</button>
+            <div class="readme-section" style="margin: 40px auto; max-width: 800px; padding: 20px;">
+                <button class="collapsible-btn" onclick="toggleReadme()">About ▼</button>
+                <div id="readmeContent" class="readme-content collapsed">
+                    <h1>Program Map Visualization Tool</h1>
+                    <h2>Github</h2>
+                    <a href="https://github.com/fiacrerougieux/mappy" target="_blank" class="repo-link">https://github.com/fiacrerougieux/mappy</a>
+                    <h2>License</h2>
+                    <p>MIT License - See LICENSE file for details</p>
+                </div>
+            </div>
         </div>
         <div id="plotArea" style="width: 100%; height: 800px;"></div>
     </div>
@@ -390,6 +476,13 @@
                     margin: { l: 150, b: 100 }
                 }
             };
+        }
+
+        function toggleReadme() {
+            const content = document.getElementById('readmeContent');
+            const btn = document.querySelector('.collapsible-btn');
+            content.classList.toggle('collapsed');
+            btn.textContent = content.classList.contains('collapsed') ? 'Documentation ▼' : 'Documentation ▲';
         }
 
         function createCumulativeHeatmap() {
