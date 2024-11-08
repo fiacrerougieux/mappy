@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Maps</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        #instructions {
+            flex: 0 0 300px;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            margin: 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .plot-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            touch-action: manipulation;
+        }
+        .plot-button:hover {
+            background-color: #45a049;
+        }
+        .plot-button.active {
+            background-color: #45a049;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        #instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        .file-input-wrapper {
+            margin: 20px 0;
+        }
+        .file-input-wrapper input[type="file"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            width: 100%;
+            max-width: 300px;
+        }
+        .color-picker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+
+        .color-picker::-moz-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+        .file-input-wrapper {
+            margin: 20px 0;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        #fileInput {
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+            cursor: pointer;
+        }
+
+        #fileInput:hover {
+            border-color: #999;
+        }
+
+
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .form-select {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 100%;
+            margin-top: 10px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        .reset-button {
+            padding: 8px 16px;
+            margin: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+        #plotArea {
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            #instructions {
+                position: static;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="instructions">
+            <h3>Instructions:</h3>
+            <p>1. Download and modify the template below to get started</p>
+            <button onclick="downloadTemplate()" class="btn btn-secondary">Download Template</button>
+            <p>2. Once filled, upload the Excel file (.xlsx) where:</p>
+            <ul>
+                <li>First column contains what you want to map (e.g. competencies, sdgs, AI vulnerabilities....)</li>
+                <li>First row contains course codes</li>
+                <li>Cells marked with 'x' indicate quantity achievement (e.g. competencies, sdgs, AI vulnerabilities....) </li>
+            </ul>
+            <input type="file" id="fileInput" accept=".xlsx" onchange="handleFile(this.files[0])">
+            <p>3. Click on different visualization buttons to switch between views</p>
+            <button onclick="switchPlot('binary')" class="btn btn-primary">Binary View</button>
+            <br> <br>
+            <button onclick="switchPlot('cumulative')" class="btn btn-primary">Cumulative View</button>
+            <p>4. Select a color scheme from color picker</p>
+            <input type="color" id="colorScheme" onchange="updateColorScheme()" value="#c41e3a" class="color-picker">
+            <p>5. Tap or click on cells in the program map to toggle them on/off, you may reset to origina by clicking this button:</p>
+            <button class="reset-button" onclick="resetMatrix()">Reset</button>
+        </div>
+        <div id="plotArea" style="width: 100%; height: 800px;"></div>
+    </div>
+
+    <script>
+        let courseCodes = null;
+        let competencyNumbers = null;
+        let binaryMatrix = null;
+        let originalBinaryMatrix = null;
+        let cumulativeMatrix = null;
+        let currentPlotType = null;
+
+        function downloadTemplate() {
+            // Create workbook and worksheet
+            let wb = XLSX.utils.book_new();
+            
+            // Create headers
+            let headers = ['SDGs', 'Course1', 'Course2', 'Course3', 'Course4', 'Course5', 'Course6', 'Course7'];
+            
+            // Create data array
+            let data = [];
+            // Add headers
+            data.push(headers);
+            
+            // Add rows with SDGs and their corresponding values
+            for(let i = 0; i < competencyNumbers.length; i++) {
+                let row = [competencyNumbers[i]];
+                for(let j = 0; j < binaryMatrix[i].length; j++) {
+                    row.push(binaryMatrix[i][j] === 1 ? 'x' : '');
+                }
+                data.push(row);
+            }
+            
+            // Convert to worksheet
+            let ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Program Map");
+            
+            // Generate file and trigger download
+            XLSX.writeFile(wb, "program_map_template.xlsx");
+        }
+
+        function updateColorScheme() {
+            let currentView = document.querySelector('.btn-primary.active')?.textContent.includes('Cumulative') 
+                ? 'cumulative' 
+                : 'binary';
+            switchPlot(currentView);
+        }
+
+        function resetMatrix() {
+            if (originalBinaryMatrix) {
+                binaryMatrix = originalBinaryMatrix.map(row => [...row]);
+                updateCumulativeMatrix();
+                switchPlot(currentPlotType);
+            }
+        }
+
+        function loadSampleData() {
+            courseCodes = ['Course1', 'Course2', 'Course3', 'Course4', 'Course5', 'Course6', 'Course7'];
+            competencyNumbers = ['SDG1', 'SDG2', 'SDG3', 'SDG4', 'SDG5', 'SDG6', 'SDG7', 'SDG8', 'SDG9', 'SDG10', 'SDG11', 'SDG12', 'SDG13', 'SDG14', 'SDG15', 'SDG16', 'SDG17'];
+            
+            binaryMatrix = [
+                [1, 0, 1, 0, 1, 0, 1],
+                [1, 1, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 0, 0, 1],
+                [0, 0, 1, 1, 1, 1, 0],
+                [1, 0, 0, 1, 0, 1, 1],
+                [0, 1, 0, 0, 1, 0, 1],
+                [1, 0, 1, 0, 0, 1, 0],
+                [0, 1, 0, 1, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0, 1],
+                [0, 1, 0, 1, 0, 1, 0],
+                [1, 0, 1, 1, 0, 0, 1],
+                [0, 1, 0, 0, 1, 1, 0],
+                [1, 0, 0, 1, 0, 1, 1],
+                [0, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0],
+                [0, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 1, 0, 1, 1]
+            ];
+
+            originalBinaryMatrix = binaryMatrix.map(row => [...row]);
+            updateCumulativeMatrix();
+            switchPlot('binary');
+        }
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                // Process data
+                courseCodes = jsonData[0].slice(1);
+                // Extract exact competency numbers from first column
+                competencyNumbers = jsonData.slice(1).map(row => row[0].toString());
+                
+                // Normalize matrix
+                const numCols = courseCodes.length;
+                binaryMatrix = [];
+                for(let row of jsonData.slice(1)) {
+                    let binaryRow = new Array(numCols).fill(0);
+                    for(let i = 0; i < numCols; i++) {
+                        const cell = row[i + 1];
+                        binaryRow[i] = (cell || '').toString().trim().toLowerCase() === 'x' ? 1 : 0;
+                    }
+                    binaryMatrix.push(binaryRow);
+                }
+                
+                console.log('Competencies:', competencyNumbers);
+                console.log('Normalized Matrix:', binaryMatrix);
+                
+                originalBinaryMatrix = binaryMatrix.map(row => [...row]);
+                updateCumulativeMatrix();
+                
+                switchPlot('binary');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processData(jsonData) {
+            courseCodes = jsonData[0].slice(1);
+            competencyNumbers = jsonData.slice(1).map(row => row[0]);
+            binaryMatrix = jsonData.slice(1).map(row => 
+                row.slice(1).map(cell => cell && cell.toString().toLowerCase() === 'x' ? 1 : 0)
+            );
+            originalBinaryMatrix = binaryMatrix.map(row => [...row]);
+            updateCumulativeMatrix();
+        }
+
+        function updateCumulativeMatrix() {
+            cumulativeMatrix = binaryMatrix.map(row => {
+                let cumSum = 0;
+                return row.map(val => {
+                    cumSum += val;
+                    return cumSum;
+                });
+            });
+        }
+
+        function toggleCell(row, col) {
+            binaryMatrix[row][col] = 1 - binaryMatrix[row][col];
+            updateCumulativeMatrix();
+            switchPlot(currentPlotType);
+        }
+
+        function createBinaryHeatmap() {
+            let color = document.getElementById('colorScheme').value;
+            return {
+                data: [{
+                    z: binaryMatrix,
+                    x: courseCodes,
+                    y: competencyNumbers,
+                    type: 'heatmap',
+                    colorscale: [
+                        [0, 'white'],
+                        [1, color]
+                    ],
+                    showscale: false,
+                    hoverongaps: true,
+                    zmin: 0,
+                    showgaps: false,
+                    connectgaps: true
+                }],
+                layout: {
+                    xaxis: {
+                        title: 'Course Codes',
+                        tickangle: 45
+                    },
+                    yaxis: {
+                        title: 'Competencies',
+                        tickfont: { size: 10 }
+                    },
+                    height: 800,
+                    margin: { l: 150, b: 100 }
+                }
+            };
+        }
+
+        function createCumulativeHeatmap() {
+            let color = document.getElementById('colorScheme').value;
+            return {
+                data: [{
+                    z: cumulativeMatrix,
+                    x: courseCodes,
+                    y: competencyNumbers,
+                    type: 'heatmap',
+                    colorscale: [
+                        [0, 'white'],
+                        [1, color]
+                    ],
+                    colorbar: { 
+                        title: "Cumulative Achievements",
+                        thickness: 20,
+                        len: 0.9
+                    },
+                    hoverongaps: true,
+                    zmin: 0,
+                    showgaps: false,
+                    connectgaps: true
+                }],
+                layout: {
+                    title: 'Program Cumulative Map',
+                    xaxis: {
+                        title: 'Course Codes',
+                        tickangle: 45
+                    },
+                    yaxis: {
+                        title: 'Competencies',
+                        tickfont: { size: 10 }
+                    },
+                    height: 800,
+                    margin: { l: 150, b: 100, r: 100 }
+                }
+            };
+        }
+
+        function switchPlot(plotType) {
+            if (!courseCodes) return;
+
+            currentPlotType = plotType;
+
+            document.querySelectorAll('.plot-button').forEach(button => {
+                button.classList.remove('active');
+                if (button.textContent.toLowerCase().includes(plotType)) {
+                    button.classList.add('active');
+                }
+            });
+
+            let plotConfig;
+            switch(plotType) {
+                case 'binary':
+                    plotConfig = createBinaryHeatmap();
+                    break;
+                case 'cumulative':
+                    plotConfig = createCumulativeHeatmap();
+                    break;
+            }
+
+            Plotly.newPlot('plotArea', plotConfig.data, plotConfig.layout, {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtons: [[
+                    'zoom2d',
+                    'pan2d',
+                    'resetScale2d',
+                    'toImage'
+                ]]
+            }).then(() => {
+                if (plotType === 'binary') {
+                    const plotArea = document.getElementById('plotArea');
+                    
+                    plotArea.on('plotly_click', function(data) {
+                        if (data.points && data.points.length > 0) {
+                            const point = data.points[0];
+                            toggleCell(point.pointNumber[0], point.pointNumber[1]);
+                        }
+                    });
+
+                    plotArea.on('plotly_touch', function(data) {
+                        if (data.points && data.points.length > 0) {
+                            const point = data.points[0];
+                            toggleCell(point.pointNumber[0], point.pointNumber[1]);
+                        }
+                    });
+                }
+            });
+        }
+    
+        window.onload = function() {
+            loadSampleData();
+        };
+    </script>
+</body>
+</html>
